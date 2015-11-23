@@ -4,76 +4,54 @@ from __future__ import print_function, division, absolute_import, unicode_litera
 import sys
 import datetime
 
-import pygame
-import pygame.camera
-import pygame.image
+import cv2
 import PIL.Image
 import PIL.ImageDraw
 
 
-def get_cam(size, print_info=True):
+def capture_frame():
     """
-    List all cams, return the first cam found.
+    Capture an image from the camera. Return a numpy ndarray with the image
+    data.
     """
-    cams = pygame.camera.list_cameras()
-    print('%d cam(s) found:' % len(cams))
-    for cam in cams:
-        print('- %s' % cam)
-    cam = pygame.camera.Camera(cams[0], size)
-    return cam
+    cam = cv2.VideoCapture(0)
+    retval, image = cam.read()
+    cam.release()
+    return image
 
 
-def capture_surface(cam):
+def cv_to_pil(img):
     """
-    Capture an image from the camera. Return a pygame surface.
+    Convert a OpenCV image to a PIL image.
     """
-    cam.start()
-    return cam.get_image()
+    rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    return PIL.Image.fromarray(rgb)
 
 
-def pygame_to_pil(surface, size):
-    """
-    Convert a pygame surface to a PIL image.
-    """
-    stringimg = pygame.image.tostring(surface, 'RGBA')
-    return PIL.Image.frombytes('RGBA', size, stringimg)
-
-
-def add_timestamp(img, size):
+def add_timestamp(img):
     """
     Add the timestamp to the image. This works in-place.
     """
     draw = PIL.ImageDraw.Draw(img)
     timestamp = datetime.datetime.now().isoformat().replace('T', ' ').split('.')[0]
-    draw.text((10, size[1] - 20), timestamp, (255, 255, 255))
+    draw.text((10, img.size[1] - 20), timestamp, (255, 255, 255))
 
 
 if __name__ == '__main__':
 
     # Parse args
-    if len(sys.argv) != 4:
-        print('Usage: %s <width> <height> <webcamname>' % sys.argv[0])
+    if len(sys.argv) != 2:
+        print('Usage: %s <webcamname>' % sys.argv[0])
         sys.exit(1)
 
-    # Initialize camera
-    pygame.camera.init()
-
-    # Get size
-    width = int(sys.argv[1])
-    height = int(sys.argv[2])
-    size = (width, height)
-
-    # Get the camera
-    cam = get_cam(size)
-
     # Get a pygame surface
-    surface = capture_surface(cam)
+    frame = capture_frame()
 
     # Convert to a PIL image
-    img = pygame_to_pil(surface, size)
+    img = cv_to_pil(frame)
 
     # Add timestamp
-    add_timestamp(img, size)
+    add_timestamp(img)
 
     # Save image
     filename = '%s.jpg' % sys.argv[1]
