@@ -46,6 +46,9 @@ if __name__ == '__main__':
 
     # Get a pygame surface
     frame = capture_frame()
+    if frame is None:
+        print('Could not capture frame. Is a webcam connected?')
+        sys.exit(1)
 
     # Convert to a PIL image
     img = cv_to_pil(frame)
