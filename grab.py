@@ -10,12 +10,13 @@ import PIL.Image
 import PIL.ImageDraw
 
 
-def get_images(base_filename):
+def get_images(image_dir, base_filename):
     """
-    Step through cameras, capturing images.
+    Step through cameras, capturing images. This should work for any
+    number of cameras.
     """
-    camCounter = 0
-    frame = capture_frame(camCounter)
+    cam_counter = 0
+    frame = capture_frame(cam_counter)
     if frame is False:
         print('Could not capture frame. Is a webcam connected?')
         sys.exit(1)
@@ -29,12 +30,13 @@ def get_images(base_filename):
         add_timestamp(img)
 
         # Save image
-        filename = '%s_%d.jpg' % (base_filename, camCounter)
+        filename = '%s_%d.jpg' % (base_filename, cam_counter)
+        filename = os.path.join(image_dir, filename)
         img.save(filename)
 
         # Next camera...
-        camCounter += 1
-        frame = capture_frame(camCounter)
+        cam_counter += 1
+        frame = capture_frame(cam_counter)
 
 
 def capture_frame(cam_num):
@@ -74,12 +76,20 @@ if __name__ == '__main__':
         print('Usage: %s <webcamname>' % sys.argv[0])
         sys.exit(1)
 
-    # Remove existing images (in case camera was removed we don't want
-    # its old image hanging around).
-    for i in range(10):
-        filename = '%s_%d.jpg' % (sys.argv[1], i)
-        if os.path.isfile(filename):
-            os.remove(filename)
+    # Hardcoded directory for storing image(s)
+    image_dir = "webcam_images"
+    if os.path.exists(image_dir):
+        if os.path.isdir(image_dir):
+            for f in os.listdir(image_dir):
+                f_with_dir = os.path.join(image_dir, f)
+                os.remove(f_with_dir)
+        else:
+            print('Error: required directory %s already exists but is '
+                  'not a directory!\nPlease delete it and try again.'
+                  % image_dir)
+            sys.exit(1)
+    else:
+        os.mkdir(image_dir)
 
     # Go!
-    get_images(sys.argv[1])
+    get_images(image_dir, sys.argv[1])
